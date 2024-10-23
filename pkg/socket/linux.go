@@ -19,6 +19,7 @@ import (
 
 var connClosed = make(chan bool)
 
+//nolint:staticcheck
 func runAsHost(socketPath string) {
 	listener, err := net.Listen("unix", socketPath)
 	if err != nil {

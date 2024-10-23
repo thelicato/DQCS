@@ -15,6 +15,7 @@ var hostCmd = &cobra.Command{
 	},
 }
 
+//nolint:errcheck
 func init() {
 	rootCmd.AddCommand(hostCmd)
 	hostCmd.Flags().StringVarP(&socketPath, "socket", "s", "", "Path to the socket file")
