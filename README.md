@@ -26,7 +26,7 @@ The structure of the project is pretty simple:
 The following is a list of the features (both planned and implemented):
 - [x] Allow bidirectional copy between Linux host and Linux guest
 - [x] Allow bidirectional copy between Linux host and Windows guest 
-- [ ] Command to quickly add a Linux Service
+- [ ] Command to quickly generate a Linux service file
 - [ ] Command to quickly add a Windows Service
 - [ ] Allow image clipboard sharing
 
@@ -74,7 +74,33 @@ TODO!
 
 ### Setup a Linux Service
 
-TODO!
+Here is a sample Linux service that you can use to automate the usage:
+
+```
+[Unit]
+Description=dqcs
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/dqcs guest # Edit with the correct 'dqcs' binary location
+Restart=on-failure
+User=root
+Environment=PATH=/usr/bin:/bin
+Environment=DISPLAY=:1 # Edit this
+Environment=XAUTHORITY=/run/usr/1000/gdm/Xauthority # Edit this
+WorkingDirectory=/root
+
+[Install]
+WantedBy=multi-user.target
+```
+
+To create a Linux service:
+1. Create a ``dqcs.service`` file in ``/etc/systemd/system`` with the above content
+2. Reload the available service with ``systemctl daemon-reload``
+3. Start the ``dqcs.service`` with ``systemctl start dqcs``
+4. Check the current status of the service with ``systemctl status dqcs``
+5. Enable autostart with ``systemctl enable dqcs``
 
 
 ## 🚀 Installation
