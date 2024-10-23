@@ -1,0 +1,9 @@
+version: "3"
+
+tasks:
+  local:
+    cmds:
+      - goreleaser release --snapshot --clean
+  release:
+    cmds:
+      - goreleaser release
