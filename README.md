@@ -70,7 +70,17 @@ The help is pretty self-explainatory, the correct order is the following:
 
 ### Configure QEMU
 
-TODO!
+The following options are needed in your QEMU start command to make things work:
+
+```
+  -device virtio-serial \
+  -chardev socket,path=<CHANGEME>,id=clipboard \
+  -device virtserialport,chardev=clipboard,name=com.dqcs.clipboard
+```
+
+The ``path`` value needs to be set accordingly with the path specified when running the ``dqcs host`` command. 
+Currently the name of the ``virtserialport`` device is hardcoded to ``com.dqcs.clipboard`` (could be customizable in the future).
+
 
 ### Setup a Linux Service
 
