@@ -42,7 +42,7 @@ This will display the help for the tool
         ░█░█░█\█░█░░░▀▀█
         ░▀▀░░░▀\░▀▀▀░▀▀▀
 
-v0.0.1 - https://github.com/thelicato/dqcs
+v0.1.0 - https://github.com/thelicato/dqcs
 
 Dummy QEMU Clipboard Sharing for those who don't like SPICE
 
