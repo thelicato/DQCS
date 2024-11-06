@@ -26,9 +26,8 @@ The structure of the project is pretty simple:
 The following is a list of the features (both planned and implemented):
 - [x] Allow bidirectional copy between Linux host and Linux guest
 - [x] Allow bidirectional copy between Linux host and Windows guest 
-- [ ] Command to quickly generate a Linux service file
-- [ ] Command to quickly add a Windows Service
 - [ ] Allow image clipboard sharing
+- [ ] Add GUI with systray to show logs and status
 
 ## 📚 Usage
 
@@ -82,27 +81,29 @@ The ``path`` value needs to be set accordingly with the path specified when runn
 Currently the name of the ``virtserialport`` device is hardcoded to ``com.dqcs.clipboard`` (could be customizable in the future).
 
 
-### Setup a Linux Service
+### Linux Service Setup
 
 Here is a sample Linux service that you can use to automate the usage:
 
 ```
 [Unit]
 Description=dqcs
-After=network.target
+After=graphical-session.target
+Wants=graphical-session.target
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/dqcs guest # Edit with the correct 'dqcs' binary location
+ExecStart=/usr/local/bin/dqcs guest
 Restart=on-failure
+RestartSec=10
 User=root
 Environment=PATH=/usr/bin:/bin
-Environment=DISPLAY=:1 # Edit this
-Environment=XAUTHORITY=/run/usr/1000/gdm/Xauthority # Edit this
+Environment=DISPLAY=:1
+Environment=XAUTHORITY=/run/user/1000/gdm/Xauthority
 WorkingDirectory=/root
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target
 ```
 
 To create a Linux service:
@@ -111,6 +112,15 @@ To create a Linux service:
 3. Start the ``dqcs.service`` with ``systemctl start dqcs``
 4. Check the current status of the service with ``systemctl status dqcs``
 5. Enable autostart with ``systemctl enable dqcs``
+
+### Windows Setup
+
+Even though the tool is built to support Windows services the clipboard **does not seem to be updated** when running as a Service. For this reason I'm just running it as a *Scheduled Task*.
+
+Is it ugly? Definitely.
+Does it work? Hell yeah.
+
+A solution could be to either fix the *Windows Service* or build a light GUI and keep it in the systray.
 
 
 ## 🚀 Installation
