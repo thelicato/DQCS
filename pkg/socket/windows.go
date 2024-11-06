@@ -15,7 +15,75 @@ import (
 	"github.com/thelicato/dqcs/pkg/utils"
 	"golang.design/x/clipboard"
 	"golang.org/x/sys/windows"
+	"golang.org/x/sys/windows/svc"
+	"golang.org/x/sys/windows/svc/eventlog"
+	"golang.org/x/sys/windows/svc/mgr"
 )
+
+type dqcsService struct{}
+
+func (m *dqcsService) Execute(args []string, r <-chan svc.ChangeRequest, s chan<- svc.Status) (bool, uint32) {
+	s <- svc.Status{State: svc.StartPending}
+	go guest()
+	s <- svc.Status{State: svc.Running, Accepts: svc.AcceptStop | svc.AcceptShutdown}
+
+	for {
+		c := <-r
+		switch c.Cmd {
+		case svc.Interrogate:
+			s <- c.CurrentStatus
+		case svc.Stop, svc.Shutdown:
+			s <- svc.Status{State: svc.StopPending}
+			return false, 0
+		}
+	}
+}
+
+func installService() error {
+	m, err := mgr.Connect()
+	if err != nil {
+		return err
+	}
+	defer m.Disconnect()
+
+	s, err := m.CreateService(utils.WinServiceName, os.Args[0], mgr.Config{DisplayName: "DQCS"})
+	if err != nil {
+		return err
+	}
+	defer s.Close()
+
+	err = eventlog.InstallAsEventCreate(utils.WinServiceName, eventlog.Info|eventlog.Error|eventlog.Warning)
+	if err != nil {
+		s.Delete()
+		return fmt.Errorf("setup event log failed: %s", err)
+	}
+	return nil
+}
+
+func uninstallService() error {
+	m, err := mgr.Connect()
+	if err != nil {
+		return err
+	}
+	defer m.Disconnect()
+
+	s, err := m.OpenService(utils.WinServiceName)
+	if err != nil {
+		return err
+	}
+	defer s.Close()
+
+	err = s.Delete()
+	if err != nil {
+		return err
+	}
+
+	err = eventlog.Remove(utils.WinServiceName)
+	if err != nil {
+		return fmt.Errorf("remove event log failed: %s", err)
+	}
+	return nil
+}
 
 func runAsHost(_ string) {
 	fmt.Println("Windows is not supported as Host")
@@ -39,6 +107,14 @@ func openVirtioSerialPort(path string) (*os.File, error) {
 }
 
 func runAsGuest() {
+	err := svc.Run(utils.WinServiceName, &dqcsService{})
+	if err != nil {
+		fmt.Println("Running as interactive mode")
+		guest()
+	}
+}
+
+func guest() {
 	file, err := openVirtioSerialPort(utils.WinVirtioPortName)
 	if err != nil {
 		fmt.Printf("Error opening virtio-serial port: %v\n", err)
@@ -127,7 +203,7 @@ func asyncWrite(conn *os.File, data []byte) error {
 	overlapped := new(windows.Overlapped)
 
 	// Create an event for the overlapped operation
-	event, err := windows.CreateEvent(nil, 0, 0, nil)
+	event, err := windows.CreateEvent(nil, 1, 0, nil)
 	if err != nil {
 		return err
 	}
