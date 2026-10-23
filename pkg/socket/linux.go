@@ -26,7 +26,14 @@ func runAsHost(socketPath string) {
 		fmt.Printf("Error starting UNIX socket listener: %v\n", err)
 		os.Exit(1)
 	}
-	defer listener.Close()
+	defer func() {
+		if err := listener.Close(); err != nil {
+			fmt.Printf("Error closing UNIX socket listener: %v\n", err)
+		}
+		if err := os.Remove(socketPath); err != nil && !os.IsNotExist(err) {
+			fmt.Printf("Error removing UNIX socket: %v\n", err)
+		}
+	}()
 	fmt.Println("Waiting for guest to connect...")
 
 	for {
@@ -43,9 +50,6 @@ func runAsHost(socketPath string) {
 		fmt.Println("Connection closed, cleaning up and closing")
 		break
 	}
-
-	listener.Close()
-	os.Remove(socketPath)
 }
 
 func openGuestConnection() (io.ReadWriteCloser, error) {
@@ -64,14 +68,16 @@ func runAsGuest() {
 		fmt.Fprintf(os.Stderr, "Error opening virtio port: %v\n", err)
 		os.Exit(1)
 	}
-	defer conn.Close()
-
 	fmt.Println("Guest connection opened")
 	handleConnection(conn)
 }
 
 func handleConnection(conn io.ReadWriteCloser) {
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			fmt.Printf("Error closing connection: %v\n", err)
+		}
+	}()
 
 	var wg sync.WaitGroup
 
