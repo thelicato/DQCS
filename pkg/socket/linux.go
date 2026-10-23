@@ -131,9 +131,10 @@ func readFromConnection(conn io.Reader, lastReceivedClipboard *[]byte, wg *sync.
 	}
 }
 
-func writeToConnection(conn io.Writer, clipboardCh <-chan []byte, lastReceivedClipboard *[]byte, wg *sync.WaitGroup) {
+func writeToConnection(conn io.Writer, clipboardCh <-chan clipboard.Data, lastReceivedClipboard *[]byte, wg *sync.WaitGroup) {
 	defer wg.Done()
-	for data := range clipboardCh {
+	for clipboardData := range clipboardCh {
+		data := clipboardData.Bytes
 		if bytes.Equal(data, *lastReceivedClipboard) {
 			continue
 		}
