@@ -184,7 +184,8 @@ func writeLoop(conn *os.File, quit chan struct{}, wg *sync.WaitGroup) {
 		select {
 		case <-quit:
 			return
-		case data := <-clipboardCh:
+		case clipboardData := <-clipboardCh:
+			data := clipboardData.Bytes
 			if bytes.Equal(data, lastClipboard) {
 				continue // Skip if the data hasn't changed
 			}
